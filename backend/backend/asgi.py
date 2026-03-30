@@ -1,16 +1,15 @@
 """
-ASGI config for backend project.
+ASGI config for backend project (Channels 1.x).
 
-It exposes the ASGI callable as a module-level variable named ``application``.
+Exposes the channel layer as a module-level variable named ``channel_layer``.
 
 For more information on this file, see
-https://docs.djangoproject.com/en/3.1/howto/deployment/asgi/
+https://channels.readthedocs.io/en/1.x/deploying.html
 """
 
 import os
-
-from django.core.asgi import get_asgi_application
+from channels.asgi import get_channel_layer
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'backend.settings')
 
-application = get_asgi_application()
+channel_layer = get_channel_layer()

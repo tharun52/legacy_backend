@@ -1,17 +1,16 @@
-import asyncio
 import json
-from channels.generic.websocket import JsonWebsocketConsumer
-from asgiref.sync import async_to_sync
+from channels.generic.websockets import JsonWebsocketConsumer
 
 
 class ToDoEventConsumer(JsonWebsocketConsumer):
-    def connect(self):
-        print('In connect()')
-        async_to_sync(self.channel_layer.group_add)(
-            'events', self.channel_name)
+    channel_session = True
 
-        self.accept()
-        self.send_json({
+    def connection_groups(self, **kwargs):
+        return ['events']
+
+    def connect(self, message, **kwargs):
+        print('In connect()')
+        self.send({
             'type': 'events.connected',
             'content': {
                 'id': 999,
@@ -21,22 +20,9 @@ class ToDoEventConsumer(JsonWebsocketConsumer):
             }
         })
 
-    def disconnect(self, message):
-        print("Closed websocket with code: ", message)
-        async_to_sync(self.channel_layer.group_discard)(
-            'events',
-            self.channel_name
-        )
-        self.close()
+    def disconnect(self, message, **kwargs):
+        print("Closed websocket with code: {}".format(message))
 
-    def receive_json(self, content, **kwargs):
+    def receive(self, content, **kwargs):
         print("Received event: {}".format(content))
-        self.send_json(content)
-
-    def events_todonotify(self, event):
-        self.send_json(
-            {
-                'type': 'events.todonotify',
-                'content': event['content']
-            }
-        )
+        self.send(content)
