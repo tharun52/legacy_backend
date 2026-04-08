@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using BlogApi.Data;
 using BlogApi.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace BlogApi.Controllers
 {
     [ApiController]
-    [Route("api/posts/{postId}/comments")]
+    [Route("api/posts/{postId:int}/comments")]
     public class CommentsController : ControllerBase
     {
         private readonly BlogContext _context;
@@ -48,10 +44,11 @@ namespace BlogApi.Controllers
 
         // DELETE: api/posts/5/comments/3
         [Authorize]
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteComment(int postId, int id)
         {
-            var comment = await _context.Comments.FirstOrDefaultAsync(c => c.Id == id && c.PostId == postId);
+            var comment = await _context.Comments
+                .FirstOrDefaultAsync(c => c.Id == id && c.PostId == postId);
             if (comment == null) return NotFound();
 
             _context.Comments.Remove(comment);

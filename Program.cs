@@ -7,9 +7,11 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// ── Database ─────────────────────────────────────────────────────────────────
 builder.Services.AddDbContext<BlogContext>(options =>
     options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 
+// ── CORS ──────────────────────────────────────────────────────────────────────
 var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>()
     ?? new[] { "http://localhost:4200" };
 
@@ -21,7 +23,13 @@ builder.Services.AddCors(options =>
               .AllowAnyMethod());
 });
 
-var jwtKey = builder.Configuration["Jwt:Key"]!;
+// ── JWT Authentication ────────────────────────────────────────────────────────
+// JWT key MUST be provided via environment variable JWT__Key or appsettings secret.
+// Never hardcode secrets in source files.
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException(
+        "JWT key is not configured. Set the 'Jwt:Key' environment variable.");
+
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
@@ -40,8 +48,11 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddEndpointsApiExplorer();
+
+// ── Swagger (Development only) ────────────────────────────────────────────────
 builder.Services.AddSwaggerGen(c =>
 {
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "Blog API", Version = "v1" });
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         In = ParameterLocation.Header,
@@ -58,22 +69,33 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
+// ── Health checks ─────────────────────────────────────────────────────────────
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
+// ── Database initialisation ───────────────────────────────────────────────────
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<BlogContext>();
     db.Database.EnsureCreated();
 }
 
-app.UseSwagger();
-app.UseSwaggerUI();
+// ── Middleware pipeline ───────────────────────────────────────────────────────
+app.UseHttpsRedirection();
+
+// Swagger only in Development
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI();
+}
 
 app.UseCors("AllowAngular");
-
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapHealthChecks("/health");
 app.MapControllers();
 
 app.Run();
