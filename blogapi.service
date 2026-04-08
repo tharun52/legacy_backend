@@ -3,8 +3,8 @@ Description=Blog API - ASP.NET Core
 After=network.target
 
 [Service]
-WorkingDirectory=/home/ubuntu/legacy_backend
-ExecStart=/usr/bin/dotnet /home/ubuntu/legacy_backend/bin/Release/net10.0/BlogApi.dll
+WorkingDirectory=/home/ubuntu/legacy_backend/publish
+ExecStart=/usr/local/bin/dotnet /home/ubuntu/legacy_backend/publish/BlogApi.dll
 Restart=always
 RestartSec=10
 KillSignal=SIGINT
@@ -12,6 +12,7 @@ SyslogIdentifier=blogapi
 User=ubuntu
 Environment=ASPNETCORE_ENVIRONMENT=Production
 Environment=ASPNETCORE_URLS=http://0.0.0.0:5000
+Environment=DOTNET_ROOT=/home/ubuntu/.dotnet
 
 [Install]
 WantedBy=multi-user.target
