@@ -1,7 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using BlogApi.Data;
 using BlogApi.Models;
 using Microsoft.AspNetCore.Authorization;
@@ -29,7 +25,7 @@ namespace BlogApi.Controllers
         }
 
         // GET: api/posts/5
-        [HttpGet("{id}")]
+        [HttpGet("{id:int}")]
         public async Task<ActionResult<Post>> GetPost(int id)
         {
             var post = await _context.Posts.FindAsync(id);
@@ -51,7 +47,7 @@ namespace BlogApi.Controllers
 
         // PUT: api/posts/5
         [Authorize]
-        [HttpPut("{id}")]
+        [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdatePost(int id, Post post)
         {
             if (id != post.Id) return BadRequest();
@@ -70,7 +66,7 @@ namespace BlogApi.Controllers
 
         // DELETE: api/posts/5
         [Authorize]
-        [HttpDelete("{id}")]
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeletePost(int id)
         {
             var post = await _context.Posts.FindAsync(id);

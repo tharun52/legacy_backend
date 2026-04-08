@@ -12,11 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace BlogApi.Controllers
 {
-    public class AuthRequest
-    {
-        public string Username { get; set; } = string.Empty;
-        public string Password { get; set; } = string.Empty;
-    }
+    public record AuthRequest(string Username, string Password);
 
     [ApiController]
     [Route("api/[controller]")]
@@ -35,6 +31,9 @@ namespace BlogApi.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(AuthRequest request)
         {
+            if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
+                return BadRequest(new { message = "Username and password are required" });
+
             if (await _context.Users.AnyAsync(u => u.Username == request.Username))
                 return BadRequest(new { message = "Username already taken" });
 
@@ -64,7 +63,10 @@ namespace BlogApi.Controllers
 
         private string GenerateToken(User user)
         {
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"]!));
+            var jwtKey = _config["Jwt:Key"]
+                ?? throw new InvalidOperationException("JWT key is not configured.");
+
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var claims = new[]
@@ -77,7 +79,7 @@ namespace BlogApi.Controllers
                 issuer: _config["Jwt:Issuer"],
                 audience: _config["Jwt:Audience"],
                 claims: claims,
-                expires: DateTime.UtcNow.AddDays(7),
+                expires: DateTime.UtcNow.AddHours(1),  // reduced from 7 days to 1 hour
                 signingCredentials: creds
             );
 
