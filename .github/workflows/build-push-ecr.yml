@@ -1,0 +1,48 @@
+name: Build and Push to ECR
+
+on:
+  push:
+    branches:
+      - 'containerize/**'
+  pull_request:
+    branches:
+      - main
+
+env:
+  ECR_REPOSITORY: legacy-backend
+  IMAGE_NAME: blog-api
+
+jobs:
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: test_runner
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials via instance role
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-region: us-east-1
+
+      - name: Create ECR repository if it does not exist
+        run: |
+          aws ecr describe-repositories --repository-names $ECR_REPOSITORY --region us-east-1 || \
+          aws ecr create-repository --repository-name $ECR_REPOSITORY --region us-east-1
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t $IMAGE_NAME:${{ github.sha }} .
+
+      - name: Tag and push to ECR
+        run: |
+          ECR_REGISTRY=${{ steps.login-ecr.outputs.registry }}
+          docker tag $IMAGE_NAME:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
+          docker tag $IMAGE_NAME:${{ github.sha }} $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:${{ github.sha }}
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest

@@ -1,0 +1,25 @@
+# Build artifacts
+bin/
+obj/
+
+# Database file — never ship in image
+blog.db
+
+# Git
+.git/
+.gitignore
+
+# CI/CD
+.github/
+
+# Docs
+README.md
+
+# Scripts
+deploy.sh
+blogapi.service
+
+# IDE
+.vscode/
+.idea/
+*.user
